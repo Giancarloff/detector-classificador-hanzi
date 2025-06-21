@@ -11,21 +11,24 @@ import time
 This script generates images of Hanzi characters using various fonts, 
 applies distortions to the images, and saves them in a specified directory. 
 It also compresses the generated images into zip files for each font.
+NOTE: for adding variants to dataset run with "distorced_only"
 """
 
 # Configurations
-#FONT_PATH_LIST = ["font/data/YRDZST Semibold.ttf","font/data/sucaijishikufangti Regular.ttf","font/data/Source Han Sans CN Light.otf",
-#                  "font/data/ShouShuti Regular.ttf","font/data/shijuef.com(gongfanmianfeiti) Regular.ttf","font/data/QIJIC Regular.ttf",
-#                  "font/data/HanyiSentyPagoda Regular.ttf","font/data/AZPPT_1_1436212_19 Regular.ttf","font/data/__________ Regular.ttf",
-#                  "font/data/____ Regular.otf"]
+"""
+FONT_PATH_LIST = ["data/font/YRDZST Semibold.ttf","data/font/sucaijishikufangti Regular.ttf","data/font/Source Han Sans CN Light.otf",
+                  "data/font/ShouShuti Regular.ttf","data/font/shijuef.com(gongfanmianfeiti) Regular.ttf","data/font/QIJIC Regular.ttf",
+                  "data/font/HanyiSentyPagoda Regular.ttf","data/font/AZPPT_1_1436212_19 Regular.ttf","data/font/__________ Regular.ttf",
+                  "data/font/____ Regular.otf"]
+"""
 FONT_PATH_LIST = ["data/font/QIJIC Regular.ttf"]
 ZIP_PATH_LIST = [f"data/images/{font.strip(" ").replace("data/", "").replace(".ttf", "")}.zip" for font in FONT_PATH_LIST]
   # Path to your font file
 FONT_SIZE = 64              # Size of the characters
 IMAGE_SIZE = (84, 84)       # Image dimensions (width, height)
-BACKGROUND_COLOR = "white"  # Background color
+BACKGROUND_COLOR = 255      # Background color (branco)
 TEXT_COLOR = "black"        # Text color
-OUTPUT_DIR = [f"data/images/{font.strip(" ").replace("data/", "").replace(".ttf", "")}" for font in FONT_PATH_LIST] # Folder to save images
+OUTPUT_DIR = [f"data/images/test/{font.strip(" ").replace("data/", "").replace(".ttf", "")}" for font in FONT_PATH_LIST] # Folder to save images
 
 
 def distort_image(image):
@@ -41,22 +44,24 @@ def distort_image(image):
 def generate_images_for_font(font_path, hanzi_list, hanzi_num,distorced_only=False,distorced_num=1):
     font_name = os.path.splitext(os.path.basename(font_path))[0]
     output_dir = f"data/images/{font_name}"
-    zip_path = f"{output_dir}.zip"
+    #zip_path = f"{output_dir}.zip"
     os.makedirs(output_dir, exist_ok=True)
     font = ImageFont.truetype(font_path, FONT_SIZE)
 
     for i, hanzi in enumerate(hanzi_list, 1):
         image = Image.new("L", IMAGE_SIZE, BACKGROUND_COLOR)
+        draw = ImageDraw.Draw(image)
+        bbox = font.getbbox(hanzi)
+        w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        position = ((IMAGE_SIZE[0] - w) // 2, (IMAGE_SIZE[1] - h) // 2)
+        draw.text(position, hanzi, font=font, fill=TEXT_COLOR)
         if not distorced_only:
-            draw = ImageDraw.Draw(image)
-            draw.text((10, 10), hanzi, font=font, fill=TEXT_COLOR)
             image.save(os.path.join(output_dir, f"{hanzi}.png"))
 
-        # Imagem distorcida
-        for n_d in range(distorced_num):  
+        for n_d in range(distorced_num):
             distorted = distort_image(image)
-            img_path_aug = os.path.join(output_dir, f"{hanzi}{n_d}_aug.png")
-            # Verifica se a imagem distorcida é quase toda branca
+            randon_name = random.random()
+            img_path_aug = os.path.join(output_dir, f"{hanzi}{n_d}{randon_name:.2f}_aug.png")
             if is_mostly_white(distorted, center_only=True, imagem_direta=True):
                 continue
             distorted.save(img_path_aug)
@@ -87,7 +92,8 @@ if __name__ == "__main__":
     with ProcessPoolExecutor() as executor:
         futures = []
         for font_path in FONT_PATH_LIST:
-            futures.append(executor.submit(generate_images_for_font, font_path, hanzi_list, hanzi_num,distorced_only=True,distorced_num=3))
+            futures.append(executor.submit(generate_images_for_font, font_path, 
+                                           hanzi_list, hanzi_num,distorced_only=True,distorced_num=1))
         for future in futures:
             future.result()  # Espera todas terminarem
     elapsed = time.perf_counter() - init

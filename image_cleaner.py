@@ -32,7 +32,7 @@ def is_mostly_white(image_path, threshold=0.98, center_only=False,imagem_direta=
         h, w = arr.shape
         ch, cw = h // 4, w // 4
         arr = arr[ch:3*ch, cw:3*cw]  # pega o centro
-    white = np.sum(arr > 250)
+    white = np.sum(arr >= 240)
     total = arr.size
     return (white / total) >= threshold
 
