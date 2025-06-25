@@ -14,7 +14,7 @@ def delete_images(image_paths):
         else:
             print(f"Arquivo não encontrado: {img_path}")
 
-def is_mostly_white(image_path, threshold=0.98, center_only=False,imagem_direta=False):
+def is_mostly_white(image_path, threshold=0.95, center_only=False,imagem_direta=False):
     """
     Retorna True se a imagem for quase toda branca.
     threshold: porcentagem mínima de pixels brancos (0~1).
@@ -34,11 +34,11 @@ def is_mostly_white(image_path, threshold=0.98, center_only=False,imagem_direta=
         arr = arr[ch:3*ch, cw:3*cw]  # pega o centro
     white = np.sum(arr >= 240)
     total = arr.size
-    return (white / total) >= threshold
+    return ((white / total) >= threshold)
 
 if __name__ == "__main__":
     # Caminho para a pasta de imagens
-    image_folder = "data/images"
+    image_folder = "/home/nm/Imagens/images"
 
     total_images = 0
     total_white_images = 0
