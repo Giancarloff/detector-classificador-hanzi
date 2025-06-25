@@ -11,9 +11,10 @@ import pandas as pd
 
 # ======== CONFIGURAÇÕES ========
 BATCH_SIZE = 64
-NUM_EPOCHS = 50
+NUM_EPOCHS = 55
 LR = 1e-2
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+CLASSES = 15
 
 # ========= HEAD NN ==========
 class CLASSIFIER(nn.Module):
@@ -23,9 +24,10 @@ class CLASSIFIER(nn.Module):
         self.bn1 = nn.BatchNorm1d(256)
         self.dropout1 = nn.Dropout(0.5)
         self.fc2 = nn.Linear(256, 128)
+        self.dropout2 = nn.Dropout(0.5)
         self.bn2 = nn.BatchNorm1d(128)
-        self.dropout2 = nn.Dropout(0.4)
-        self.fc3 = nn.Linear(128, out_f)
+        self.fc3 = nn.Linear(128,out_f)
+ 
 
     def forward(self, x):
         x = self.fc1(x)
@@ -33,10 +35,11 @@ class CLASSIFIER(nn.Module):
         x = F.relu(x)
         x = self.dropout1(x)
         x = self.fc2(x)
-        x = self.bn2(x)
         x = F.relu(x)
+        x = self.bn2(x)
         x = self.dropout2(x)
-        x = self.fc3(x)
+        x =self.fc3(x)
+
         return x
 
 # ======== TRANSFORMAÇÕES (estilo ImageNet) ========
@@ -87,12 +90,14 @@ class HanziDataset(Dataset):
 
 # ======== CARREGAR DADOS DE TREINO E TESTE ========
 hanzi_list = pd.read_csv("data/characters.csv")["汉字"].tolist()
-hanzi_list = hanzi_list[:10]  # Use only the first 10 characters for quick testing
+hanzi_list = hanzi_list[:CLASSES]  # Use only the first 10 characters for quick testing
 NUM_CLASSES = len(hanzi_list)
 
-train_dataset = HanziDataset(["data/images/YRDZST Semibold","data/images/sucaijishikufangti Regular","data/images/Source Han Sans CN Light",
-                  "data/images/ShouShuti Regular","data/images/shijuef.com(gongfanmianfeiti) Regular","data/images/QIJIC Regular"], hanzi_list, transform=transform)
-test_dataset = HanziDataset(["data/images/HanyiSentyPagoda Regular","data/images/AZPPT_1_1436212_19 Regular"], hanzi_list, transform=transform)
+parent_data = "/home/nm/Imagens/images"
+
+train_dataset = HanziDataset([parent_data + "/YRDZST Semibold",parent_data + "/sucaijishikufangti Regular",parent_data + "/Source Han Sans CN Light",
+                  parent_data + "/ShouShuti Regular",parent_data + "/shijuef.com(gongfanmianfeiti) Regular",parent_data + "/QIJIC Regular"], hanzi_list, transform=transform)
+test_dataset = HanziDataset([parent_data + "/HanyiSentyPagoda Regular",parent_data + "/AZPPT_1_1436212_19 Regular"], hanzi_list, transform=transform)
 #test_dataset = HanziDataset("data/images/QIJIC Regular", hanzi_list, transform=transform)  # teste sobre o próprio dataset
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -150,14 +155,28 @@ if __name__ == "__main__":
     # ======== AVALIAÇÃO RÁPIDA ========
     print("\nIniciando a avaliação...")
     model.eval()
-    correct, total = 0, 0
+    correct, total, b_total, b_cor = 0, 0, 0 , 0
+    best_model = resnet.to(DEVICE)
+    best_model.load_state_dict(torch.load('best_model.pth', map_location=DEVICE))
     with torch.no_grad():
         for images, labels in test_loader:
             images, labels = images.to(DEVICE), labels.to(DEVICE)
             outputs = model(images)
+            best_out = best_model(images)
             _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
+            _, b_predicted = torch.max(best_out.data, 1)
+            total += labels.size(0) # patch size
+            b_total += labels.size(0)
             correct += (predicted == labels).sum().item()
+            b_cor += (b_predicted == labels).sum().item()
+    acc = 100 * correct / total
+    best_acc = 100 * b_cor / total
 
-    print(f"Accuracy: {100 * correct / total:.2f}%")
+    print(f"Accuracy: {acc:.2f}%")
+    print(f"Previous accuracy: {best_acc:.2f}%")
+
+    if best_acc < acc:
+        best_acc = acc
+        torch.save(model.state_dict(), 'best_model_acc.pth')
+        print(f"Modelo salvo em 'best_model_acc.pth' com loss: {best_acc:.2f} %")
 

@@ -82,35 +82,36 @@ criterion = nn.CrossEntropyLoss()
 # <--- CORREÇÃO: Passar para o otimizador os parâmetros da nova camada que você quer treinar
 optimizer = torch.optim.Adam(model.head.fc.parameters(), lr=LR)
 
+if __name__ == "__main__":
 # ======== TREINAMENTO ========
-print("Iniciando o treinamento...")
-for epoch in range(NUM_EPOCHS):
-    model.train()
-    running_loss = 0.0
-    for i, (images, labels) in enumerate(train_loader):
-        images, labels = images.to(DEVICE), labels.to(DEVICE)
+    print("Iniciando o treinamento...")
+    for epoch in range(NUM_EPOCHS):
+        model.train()
+        running_loss = 0.0
+        for i, (images, labels) in enumerate(train_loader):
+            images, labels = images.to(DEVICE), labels.to(DEVICE)
 
-        optimizer.zero_grad()
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
 
-        running_loss += loss.item()
+            running_loss += loss.item()
 
-    avg_loss = running_loss / len(train_loader)
-    print(f"Epoch {epoch+1}/{NUM_EPOCHS}, Loss: {avg_loss:.4f}")
+        avg_loss = running_loss / len(train_loader)
+        print(f"Epoch {epoch+1}/{NUM_EPOCHS}, Loss: {avg_loss:.4f}")
 
-# ======== AVALIAÇÃO RÁPIDA ========
-print("\nIniciando a avaliação...")
-model.eval()
-correct, total = 0, 0
-with torch.no_grad():
-    for images, labels in test_loader:
-        images, labels = images.to(DEVICE), labels.to(DEVICE)
-        outputs = model(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+    # ======== AVALIAÇÃO RÁPIDA ========
+    print("\nIniciando a avaliação...")
+    model.eval()
+    correct, total = 0, 0
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images, labels = images.to(DEVICE), labels.to(DEVICE)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
 
-print(f"Accuracy: {100 * correct / total:.2f}%")
+    print(f"Accuracy: {100 * correct / total:.2f}%")
