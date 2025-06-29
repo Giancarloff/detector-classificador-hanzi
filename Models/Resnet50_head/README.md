@@ -1,0 +1,3 @@
+# Resnet50 com classificador personalizado [1ºmodelo]
+
+### Neste modelo os pesos foram congelados, exceto os do último bloco da red,o queal foi subistituido por um classificador com de 256,128 e saída (número de classes). Não houve o uso completo dos 8105 hanzi neste modelo, resultados estão listados para os diferentes números de classes. A estrutura de dataset utilizada também difere dos de  outros modelos.
