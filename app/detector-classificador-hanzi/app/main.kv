@@ -1,0 +1,43 @@
+<attachment id="file:main.kv">
+<contents>
+<Window>:
+    title: "Reconhecimento de Caracteres"
+    size: (800, 600)
+
+<CameraApp>:
+    BoxLayout:
+        orientation: 'vertical'
+
+        Label:
+            text: "Aplicação de Reconhecimento de Caracteres"
+            size_hint_y: None
+            height: 50
+
+        Image:
+            id: camera_image
+            size_hint: (1, 1)
+
+        BoxLayout:
+            size_hint_y: None
+            height: 50
+
+            Button:
+                text: "Capturar Foto"
+                on_press: app.capture_photo()
+
+            Button:
+                text: "Reiniciar"
+                on_press: app.setup_camera_view()
+
+        Label:
+            id: result_label
+            text: ""
+            size_hint_y: None
+            height: 50
+
+        Image:
+            id: cropped_image
+            size_hint: (1, 1)
+            opacity: 0  # Inicialmente invisível
+</contents>
+</attachment>

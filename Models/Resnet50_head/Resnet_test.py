@@ -27,7 +27,8 @@ hanzi_list = hanzi_list[:15]  # Use only the first 10 characters for quick testi
 NUM_CLASSES = len(hanzi_list)
 
 #test_dataset = HanziDataset(["data/images/HanyiSentyPagoda Regular","data/images/AZPPT_1_1436212_19 Regular"], hanzi_list, transform=transform)
-test_dataset = HanziDataset("/home/nm/Imagens/images/QIJIC Regular", hanzi_list, transform=transform)  # teste sobre o próprio dataset
+test_dataset = HanziDataset(["/home/nm/Imagens/test/HanyiSentyPagoda Regular","/home/nm/Imagens/test/AZPPT_1_1436212_19 Regular","/home/nm/Imagens/test/YRDZST Semibold","/home/nm/Imagens/test/sucaijishikufangti Regular","/home/nm/Imagens/test/Source Han Sans CN Light"],
+                             hanzi_list, transform=transform)  # teste sobre o próprio dataset
 
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
@@ -37,7 +38,8 @@ in_features = resnet.fc.in_features
 resnet.fc = CLASSIFIER(in_features, NUM_CLASSES)
 
 # Carregar pesos
-resnet.load_state_dict(torch.load('best_model.pth', map_location=DEVICE))
+#resnet.load_state_dict(torch.load('Models/Resnet50_head/best_model.pth', map_location=DEVICE))
+resnet.load_state_dict(torch.load('Models/Resnet50_head/fine_tuned_model.pth', map_location=DEVICE))
 
 # Colocar em modo de avaliação
 print("\nIniciando a avaliação...")
@@ -50,5 +52,19 @@ with torch.no_grad():
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
+
+import matplotlib.pyplot as plt
+
+# Plot de setores para corretos e incorretos
+incorrect = total - correct
+labels = ['Corretos', 'Incorretos']
+sizes = [correct, incorrect]
+colors = ['#4CAF50', '#F44336']
+
+plt.figure(figsize=(5,5))
+plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+plt.title('Proporção de Previsões Corretas e Incorretas')
+plt.axis('equal')
+plt.show()
 
 print(f"Accuracy: {100 * correct / total:.2f}%")

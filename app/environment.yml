@@ -1,0 +1,40 @@
+# Arquivo de ambiente Conda para o aplicativo de reconhecimento de caracteres
+#
+# Para criar o ambiente, navegue até o diretório deste arquivo no terminal
+# e execute o seguinte comando:
+#
+# conda env create -f environment.yml
+#
+# Depois, para ativar o ambiente, execute:
+#
+# conda activate kivy_torch_env
+#
+
+name: kivy_torch_env
+
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Versão do Python
+  - python=3.10
+
+  # Bibliotecas do PyTorch
+  # O Conda irá baixar a versão apropriada para a sua CPU (incluindo ARM)
+  - pytorch
+  - torchvision
+  - torchaudio
+
+  # Modelos usados 
+  - timm
+
+  # Biblioteca Kivy e suas dependências
+  - kivy
+
+  # Biblioteca para manipulação de imagens
+  - pillow
+
+  # Biblioteca para computação numérica
+  - numpy

@@ -4,7 +4,7 @@ import zipfile
 import os
 import random
 from concurrent.futures import ProcessPoolExecutor
-from image_cleaner import is_mostly_white
+#from image_cleaner import is_mostly_white
 import time
 import json
 
@@ -18,9 +18,8 @@ NOTE: for adding variants to dataset run with "distorced_only"
 #==================== Configurations ========================
 #"""
 FONT_PATH_LIST = ["data/font/YRDZST Semibold.ttf","data/font/sucaijishikufangti Regular.ttf","data/font/Source Han Sans CN Light.otf",
-                  "data/font/ShouShuti Regular.ttf","data/font/shijuef.com(gongfanmianfeiti) Regular.ttf","data/font/QIJIC Regular.ttf",
-                  "data/font/HanyiSentyPagoda Regular.ttf","data/font/AZPPT_1_1436212_19 Regular.ttf","data/font/__________ Regular.ttf",
-                  "data/font/____ Regular.otf"]
+                  "data/font/ShouShuti Regular.ttf","data/font/shijuef.com(gongfanmianfeiti) Regular.ttf","data/font/HanyiSentyPagoda Regular.ttf",
+                  "data/font/AZPPT_1_1436212_19 Regular.ttf","data/font/__________ Regular.ttf","data/font/____ Regular.otf"]
 #"""
 #FONT_PATH_LIST = ["data/font/QIJIC Regular.ttf"]
 ZIP_PATH_LIST = [f"/home/nm/Imagens/images/{font.strip(" ").replace("data/", "").replace(".ttf", "")}.zip" for font in FONT_PATH_LIST]
@@ -29,12 +28,12 @@ FONT_SIZE = 64              # Size of the characters
 IMAGE_SIZE = (84, 84)       # Image dimensions (width, height)
 BACKGROUND_COLOR = 255      # Background color (branco)
 TEXT_COLOR = "black"        # Text color
-OUTPUT_DIR = "/home/nm/Imagens/images/test/"
+OUTPUT_DIR = "/home/nm/Imagens/test/"
 
 
 def distort_image(image):
     # Rotação aleatória
-    image = image.rotate(random.uniform(-10, 10))
+    image = image.rotate(random.uniform(-10, 10), fillcolor = 255)
     # Blur
     image = image.filter(ImageFilter.GaussianBlur(radius=random.uniform(0, 1.5)))
     # Brilho
@@ -49,7 +48,7 @@ def generate_images_for_font(font_path, hanzi_list, hanzi_num,distorced_only=Fal
     os.makedirs(output_dir, exist_ok=True)
     font = ImageFont.truetype(font_path, FONT_SIZE)
 
-    with open("font_hanzi_dict.json", "r", encoding="utf-8") as f:
+    with open("data/font_hanzi_dict.json", "r", encoding="utf-8") as f:
         font_hanzi_dict = json.load(f)
     existing_hanzi = font_hanzi_dict.get(font_name, [])
 
@@ -69,8 +68,8 @@ def generate_images_for_font(font_path, hanzi_list, hanzi_num,distorced_only=Fal
                     distorted = distort_image(image)
                     randon_name = random.random()
                     img_path_aug = os.path.join(output_dir, f"{hanzi}{n_d}{randon_name:.2f}_aug.png")
-                    if is_mostly_white(distorted, center_only=True, imagem_direta=True):   # treshold = 95
-                        continue
+                    #if is_mostly_white(distorted, center_only=True, imagem_direta=True):   # treshold = 95
+                     #   continue
                     distorted.save(img_path_aug)
 
         percent = (i / hanzi_num) * 100
@@ -100,7 +99,7 @@ if __name__ == "__main__":
         futures = []
         for font_path in FONT_PATH_LIST:
             futures.append(executor.submit(generate_images_for_font, font_path, 
-                                           hanzi_list, hanzi_num,distorced_only=True,distorced_num=2, parent_output = OUTPUT_DIR)) 
+                                           hanzi_list, hanzi_num,distorced_only=True,distorced_num=1, parent_output = OUTPUT_DIR)) 
                                            # NOTE:  config the generation here ^
         for future in futures:
             future.result()  # Espera todas terminarem

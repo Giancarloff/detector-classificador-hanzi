@@ -10,8 +10,8 @@ import os
 import pandas as pd
 
 # ======== CONFIGURAÇÕES ========
-BATCH_SIZE = 64
-NUM_EPOCHS = 55
+BATCH_SIZE = 32
+NUM_EPOCHS = 100
 LR = 1e-2
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 CLASSES = 15
@@ -94,10 +94,14 @@ hanzi_list = hanzi_list[:CLASSES]  # Use only the first 10 characters for quick 
 NUM_CLASSES = len(hanzi_list)
 
 parent_data = "/home/nm/Imagens/images"
+parent_test = "/home/nm/Imagens/test"
 
 train_dataset = HanziDataset([parent_data + "/YRDZST Semibold",parent_data + "/sucaijishikufangti Regular",parent_data + "/Source Han Sans CN Light",
-                  parent_data + "/ShouShuti Regular",parent_data + "/shijuef.com(gongfanmianfeiti) Regular",parent_data + "/QIJIC Regular"], hanzi_list, transform=transform)
-test_dataset = HanziDataset([parent_data + "/HanyiSentyPagoda Regular",parent_data + "/AZPPT_1_1436212_19 Regular"], hanzi_list, transform=transform)
+                  parent_data + "/ShouShuti Regular",parent_data + "/shijuef.com(gongfanmianfeiti) Regular",parent_data + "/HanyiSentyPagoda Regular"
+                  ,parent_data + "/AZPPT_1_1436212_19 Regular"], hanzi_list, transform=transform)
+test_dataset = HanziDataset([parent_test + "/YRDZST Semibold",parent_test + "/sucaijishikufangti Regular",parent_test + "/Source Han Sans CN Light",
+                  parent_test + "/ShouShuti Regular",parent_test + "/shijuef.com(gongfanmianfeiti) Regular",parent_test + "/HanyiSentyPagoda Regular"
+                  ,parent_test + "/AZPPT_1_1436212_19 Regular"], hanzi_list, transform=transform)
 #test_dataset = HanziDataset("data/images/QIJIC Regular", hanzi_list, transform=transform)  # teste sobre o próprio dataset
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -123,10 +127,15 @@ optimizer = torch.optim.Adam(model.fc.parameters(), lr=LR, weight_decay=1e-5) # 
 # Reduz a LR por um fator de 0.1 a cada 20 épocas
 scheduler = StepLR(optimizer, step_size=20, gamma=0.1)
 
+import matplotlib.pyplot as plt
+
 if __name__ == "__main__":
     # ======== TREINAMENTO ========
     print("Iniciando o treinamento...")
     best_loss = np.inf
+    train_losses = []
+    val_accuracies = []
+
     for epoch in range(NUM_EPOCHS):
         model.train()
         running_loss = 0.0
@@ -141,42 +150,49 @@ if __name__ == "__main__":
 
             running_loss += loss.item()
 
-        
         # Atualiza a taxa de aprendizagem
         scheduler.step()
         avg_loss = running_loss / len(train_loader)
+        train_losses.append(avg_loss)
+
+        # Validação rápida ao final de cada época
+        model.eval()
+        correct, total = 0, 0
+        with torch.no_grad():
+            for images, labels in test_loader:
+                images, labels = images.to(DEVICE), labels.to(DEVICE)
+                outputs = model(images)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+        val_acc = 100 * correct / total
+        val_accuracies.append(val_acc)
+
         if avg_loss < best_loss:
             best_loss = avg_loss
             torch.save(model.state_dict(), 'best_model.pth')
             print(f"Modelo salvo em 'best_model.pth' com loss: {best_loss:.4f}")
 
-        print(f"Epoch {epoch+1}/{NUM_EPOCHS}, Loss: {avg_loss:.4f}, LR: {scheduler.get_last_lr()[0]:.6f}")
+        print(f"Epoch {epoch+1}/{NUM_EPOCHS}, Loss: {avg_loss:.4f}, Val Acc: {val_acc:.2f}%, LR: {scheduler.get_last_lr()[0]:.6f}")
 
-    # ======== AVALIAÇÃO RÁPIDA ========
-    print("\nIniciando a avaliação...")
-    model.eval()
-    correct, total, b_total, b_cor = 0, 0, 0 , 0
-    best_model = resnet.to(DEVICE)
-    best_model.load_state_dict(torch.load('best_model.pth', map_location=DEVICE))
-    with torch.no_grad():
-        for images, labels in test_loader:
-            images, labels = images.to(DEVICE), labels.to(DEVICE)
-            outputs = model(images)
-            best_out = best_model(images)
-            _, predicted = torch.max(outputs.data, 1)
-            _, b_predicted = torch.max(best_out.data, 1)
-            total += labels.size(0) # patch size
-            b_total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-            b_cor += (b_predicted == labels).sum().item()
-    acc = 100 * correct / total
-    best_acc = 100 * b_cor / total
+    # ======== PLOT TRAIN LOSS E VAL ACC =========
+    plt.figure(figsize=(10,4))
+    plt.subplot(1,2,1)
+    plt.plot(train_losses, label='Train Loss')
+    plt.xlabel('Época')
+    plt.ylabel('Loss')
+    plt.title('Loss de Treino')
+    plt.legend()
 
-    print(f"Accuracy: {acc:.2f}%")
-    print(f"Previous accuracy: {best_acc:.2f}%")
+    plt.subplot(1,2,2)
+    plt.plot(val_accuracies, label='Validação', color='orange')
+    plt.xlabel('Época')
+    plt.ylabel('Acurácia (%)')
+    plt.title('Acurácia de Validação')
+    plt.legend()
 
-    if best_acc < acc:
-        best_acc = acc
-        torch.save(model.state_dict(), 'best_model_acc.pth')
-        print(f"Modelo salvo em 'best_model_acc.pth' com loss: {best_acc:.2f} %")
+    plt.tight_layout()
+    plt.show()
+
+   
 
