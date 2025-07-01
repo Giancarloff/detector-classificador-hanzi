@@ -2,8 +2,9 @@
 ## Feito como trabalho de Visão Computacional/Reconhecimento de Padrões - UFSC 2025
 ## Gian Carlo e Nemo R. L. Neto
 
-#### Para rodar o pipeline clássico é necessario fazer 
-`pip install opencv-python scikit-image scikit-learn joblib numpy Pillow`
+#### Para extrair hanzis de uma imagem basta rodar
+`python caminho/imagem -d` ou -m
+#### e procurar a pasta segmented_characters
 
 #### Os demais classificadores requerem
 `pip install torch torchvision timm pandas`
