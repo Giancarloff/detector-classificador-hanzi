@@ -8,9 +8,16 @@ from kivy.uix.scatter import Scatter
 from kivy.uix.camera import Camera
 from kivy.graphics.texture import Texture
 from kivy.clock import Clock
+from fastai.vision.all import *
 
 from PIL import Image as PILImage
 import io
+
+def predict_image(img_path, learn):
+    pred_class, pred_idx, probs = learn.predict(img_path)
+    print(f"Predicted class: {pred_class}")
+    print(f"Probability: {probs[pred_idx]:.4f}")
+    return pred_class, probs[pred_idx].item()
 
 kivy.require('2.0.0')
 
