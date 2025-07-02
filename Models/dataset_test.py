@@ -2,13 +2,14 @@ from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageFilter
 import pandas as pd
 import os
 import random
-from concurrent.futures import ProcessPoolExecutor
 import json
 """
 This script generates images of Hanzi characters using various fonts,
 applies distortions to the images, and saves them in a specified directory.
 It also compresses the generated images into zip files for each font.
 NOTE: for adding variants to dataset run with "distorced_only"
+NOTE: IA generativa usada para funções de distorcão (integralmente)
+e geração (parcialmente).
 """
 print(os.getcwd())
 

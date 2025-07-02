@@ -14,7 +14,7 @@ python predicted_image.py caminho/imagem
 ```
 #### Os demais classificadores requerem
 ```bash
-pip install torch torchvision timm==1.0.11 pandas fastai==2.7.18
+pip install torch torchvision timm==1.0.11 pandas fastai==2.7.18 opencv-python
 ```
 
 #### Fontes disponíveis em: https://chinesefonts.org/

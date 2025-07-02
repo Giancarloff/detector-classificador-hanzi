@@ -13,23 +13,34 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # --- 1. CONFIGURATION & SETUP ---
+if os.name == 'nt':  # windows
+    # Constants for the pipeline
+    DATASET_PATH = r"data\font_hanzi_images"
+    FONT_PATH = r"data\font\Source Han Sans CN Light.otf"  # <--- IMPORTANT: Change this to your font file name
+    TEST_FONT_PATH = r"data\font\YRDZST Semibold.ttf"
+    MODEL_PATH = "classical_pipeline_hanzi_classifier.pkl"
+    IMG_SIZE = (64, 64) # Standard size for each character image
 
-# Constants for the pipeline
-DATASET_PATH = r"data\font_hanzi_images"
-FONT_PATH = r"data\font\Source Han Sans CN Light.otf"  # <--- IMPORTANT: Change this to your font file name
-TEST_FONT_PATH = r"data\font\YRDZST Semibold.ttf"
-MODEL_PATH = "classical_pipeline_hanzi_classifier.pkl"
-IMG_SIZE = (64, 64) # Standard size for each character image
+    df = pd.read_csv(r"data\characters.csv")
+else:   # Mac e linux com / --> endereço correto!
+    # Constants for the pipeline
+    DATASET_PATH = r"data/font_hanzi_images"
+    FONT_PATH = r"data/font/Source Han Sans CN Light.otf"  # <--- IMPORTANT: Change this to your font file name
+    TEST_FONT_PATH = r"data/font/YRDZST Semibold.ttf"
+    MODEL_PATH = "classical_pipeline_hanzi_classifier.pkl"
+    IMG_SIZE = (64, 64) # Standard size for each character image
+
+    df = pd.read_csv(r"data/characters.csv")
+
+    
+HANZI_LIST = df["汉字"].tolist()
+PINYIN_MAP = dict(zip(df["汉字"], df["拼音"].str.split("|")))
 
 # Parameters for easy tweaking
 HOG_PPC = (4, 4) # Pixels per cell
 HOG_CPB = (2, 2) # Cells per block
 HOG_ORIENTATIONS = 6 # Number of gradient bins
 HOG_BLOCK_NORM = 'L2-Hys' # Normalization method
-
-df = pd.read_csv(r"data\characters.csv")
-HANZI_LIST = df["汉字"].tolist()
-PINYIN_MAP = dict(zip(df["汉字"], df["拼音"].str.split("|")))
 
 def create_dataset_from_fonts():
     """
