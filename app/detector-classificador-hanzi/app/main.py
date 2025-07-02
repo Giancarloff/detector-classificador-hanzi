@@ -13,8 +13,11 @@ from fastai.vision.all import *
 from PIL import Image as PILImage
 import io
 
-def predict_image(img_path, learn):
-    pred_class, pred_idx, probs = learn.predict(img_path)
+MODEL_PATH = 'Models/EfficientNET/EfficientnetB0-hanzi_0(1).pkl'
+learn = load_learner(MODEL_PATH)
+
+def predict_image(img_path, _learn=learn):
+    pred_class, pred_idx, probs = _learn.predict(img_path)
     print(f"Predicted class: {pred_class}")
     print(f"Probability: {probs[pred_idx]:.4f}")
     return pred_class, probs[pred_idx].item()
@@ -124,9 +127,8 @@ class CameraApp(App):
         box = (int(crop_x), int(crop_y), int(crop_x + crop_width), int(crop_y + crop_height))
         cropped_img_pil = img_pil.crop(box)
 
-        predicted_char = "A"  # Simulação de previsão
-        
-        self.show_result(cropped_img_pil, predicted_char)
+        predicted_char, prob = predict_image(cropped_img_pil)  
+        self.show_result(cropped_img_pil, f"{predicted_char} ({prob:.2%})")
 
     def show_result(self, cropped_image, prediction):
         self.layout.clear_widgets()

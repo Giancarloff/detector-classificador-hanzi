@@ -18,6 +18,19 @@ for f in test_files:
     else:
         print(f"Skipping {f}: label '{label}' not in model vocab.")
 
+classes = set(filtered_labels)
+import csv
+
+# Save valid labels (classes) to a CSV file in the same folder as this script
+csv_path = Path(__file__).parent / "valid_labels.csv"
+with open(csv_path, "w", newline='', encoding="utf-8") as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(["label"])
+    for label in sorted(classes):
+        writer.writerow([label])
+
+print(f"Saved valid labels to {csv_path}")
+
 if not filtered_files:
     raise ValueError("No test images match the model's vocab.")
 

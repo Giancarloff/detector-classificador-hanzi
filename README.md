@@ -3,10 +3,18 @@
 ## Gian Carlo e Nemo R. L. Neto
 
 #### Para extrair hanzis de uma imagem basta rodar
-`python caminho/imagem -d` ou -m
+```bash
+python extractor.py caminho/imagem -d` ou -m
+```
 #### e procurar a pasta segmented_characters
 
+#### Para classificar sua imagem execute:
+```bash
+python predicted_image.py caminho/imagem
+```
 #### Os demais classificadores requerem
-`pip install torch torchvision timm pandas`
+```bash
+pip install torch torchvision timm==1.0.11 pandas fastai==2.7.18
+```
 
 #### Fontes disponíveis em: https://chinesefonts.org/
