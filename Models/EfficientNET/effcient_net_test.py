@@ -42,18 +42,3 @@ print("len:" + str(len(filtered_files)))  # 1 distorção + padrão
 
 accuracy = (pred_labels == true_labels).float().mean().item()
 print(f'Accuracy on test images: {accuracy*100:.2f}%')  # ---> 99%
-
-"""
-from sklearn.metrics import confusion_matrix, classification_report
-print(classification_report(true_labels, pred_labels, target_names=learn.dls.vocab))
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-cm = confusion_matrix(true_labels, pred_labels)
-plt.figure(figsize=(10,10))
-sns.heatmap(cm, annot=True, fmt="d", xticklabels=learn.dls.vocab, yticklabels=learn.dls.vocab)
-plt.xlabel('Predicted')
-plt.ylabel('True')
-plt.show()
-"""

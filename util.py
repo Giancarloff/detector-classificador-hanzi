@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageEnhance, ImageFilter
 import random
 
+""" A principio seria usado como repositório de funções,
+mas foi deixado de lado"""
+
 def distort_image(image):
     # Rotação aleatória
     image = image.rotate(random.uniform(-10, 10))
