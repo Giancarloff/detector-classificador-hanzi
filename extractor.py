@@ -10,6 +10,11 @@ DEBUG_VISUALIZE = True  # Set to False to disable debug visualizations
 OUTPUT_DIR = "segmented_characters"
 
 # Remove overlapping boxes using Non-Maximum Suppression
+'''
+Esta função altera a lista de caixas limitantes (bounding boxes) buscando agrupar caixas que
+têm muita região em comum na maior delas. Faz isso olhando as coordenadas das caixas
+dadas e calculando suas àreas, preservando a com menor valor no eixo Y.
+'''
 def non_max_suppression_fast(boxes, overlapThresh=0.3):
     if len(boxes) == 0:
         return []
@@ -23,6 +28,8 @@ def non_max_suppression_fast(boxes, overlapThresh=0.3):
     idxs = np.argsort(y2)
 
     pick = []
+    # Pega a última caixa (mais baixa) da lista, calcula a interseção dela com as outras
+    # divide a área de interseção pela área da outra caixa e verifica se atinge o limiar
     while len(idxs) > 0:
         last = idxs[-1]
         pick.append(last)
@@ -48,18 +55,24 @@ def extract_hanzi_from_image(image_path, save=True):
         print(f"Error: Could not read image '{image_path}'")
         return []
 
+    # Converte para grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Binarize (invert for white text on black)
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     # --- Dilation to merge nearby strokes ---
+    # Aplicamos dilatação pois hanzis podem conter detalhes separados porém referentes ao mesmo
+    # caractere. Aqui tentamos agrupar traços próximos.
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     dilated = cv2.dilate(binary, kernel, iterations=1)
 
     # Find contours from dilated image (merged strokes)
+    # Auto explicativo.
     contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+    # A função boundingRect do cv2 encontra a caixa delimitadora de um contorno
+    # colocamos todos os contornos encontrados por findContours em caixas delimtadores.
     bounding_boxes = [cv2.boundingRect(c) for c in contours]
     bounding_boxes = [b for b in bounding_boxes if b[2] > MIN_CHAR_SIZE and b[3] > MIN_CHAR_SIZE]
     bounding_boxes = sorted(bounding_boxes, key=lambda b: b[0])
@@ -67,6 +80,8 @@ def extract_hanzi_from_image(image_path, save=True):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     rois = []
 
+    # Extraímos a região de interesse (roi) da imagem original
+    # com base nas coordenadas das caixas delimitadores
     for idx, (x, y, w, h) in enumerate(bounding_boxes):
         roi = binary[y:y+h, x:x+w]  # Use original binary for cleaner chars
         roi_resized = cv2.resize(roi, IMG_SIZE)
@@ -97,38 +112,57 @@ def extract_hanzi_with_mser(image_path, save=True):
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     # Apply contrast enhancement and denoising first
+    # Queremos melhorar o contraste pois caracteres podem ter traços finos
+    # ou detalhes menores. O CLAHE especificamente melhora o contraste
+    # localmente, que é melhor pois cenas naturais podem ter iluminação variante.
+    # Antes, aplicamos um filtro bilateral para suavizar os ruídos preservando contornos.
     gray = cv2.bilateralFilter(gray, 9, 75, 75)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     gray = clahe.apply(gray)
 
     # Adaptive thresholding followed by dilation (like the earlier version)
+    # Como cenas naturais têm iluminação variável, usamos 
+    # uma binarização com limiar adaptativo. Neste caso, numa vizinhança
+    # de 25 pixels.
     binary = cv2.adaptiveThreshold(gray, 255,
                                 cv2.ADAPTIVE_THRESH_MEAN_C,
                                 cv2.THRESH_BINARY_INV,
                                 25, 15)
 
     # Morphological dilation to connect strokes of the same Hanzi
+    # Como no outro método, dilatamos para buscar agrupar traços de um
+    # mesmo hanzi num mesmo contorno.
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     dilated = cv2.dilate(binary, kernel, iterations=1)
 
     # Now run MSER on the *dilated image* (converted back to grayscale if needed)
+    # O uso de MSER aqui se dá pelo fato de que o algoritmo vai aplicar limiares
+    # sucessivos na binarização da imagem e buscar as regiões estáveis.
+    # Para caracteres em cenas naturais, onde valores como saturação
+    # e constraste mudam, o algoritmo oferece um pouco mais de segurança de que
+    # aquela região pode ser um hanzi (potecialmente).
     mser_input = dilated.copy()
     mser = cv2.MSER.create(delta=5, min_area=80, max_area=8000)
     regions, _ = mser.detectRegions(mser_input)
 
     # Get bounding boxes from MSER regions
+    # A única diferença é que aqui temos os "blobs" do MSER, enquanto no método anterior
+    # eram os contornos
     bounding_boxes = []
     for p in regions:
         x, y, w, h = cv2.boundingRect(p)
         if w > MIN_CHAR_SIZE and h > MIN_CHAR_SIZE:
             bounding_boxes.append((x, y, w, h))
 
+    # Como o MSER pode encontrar muitas caixas que intersectam (contornos dentro de contornos)
+    # aplicamos a non_max_suppression_fast descrito acima.
     bounding_boxes = non_max_suppression_fast(bounding_boxes)
     bounding_boxes = sorted(bounding_boxes, key=lambda b: b[0])
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     rois = []
 
+    # Extração de regiões de interesse similar ao outro método.
     for idx, (x, y, w, h) in enumerate(bounding_boxes):
         roi = gray[y:y+h, x:x+w]
         roi = cv2.resize(roi, IMG_SIZE)
